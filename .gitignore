@@ -1,0 +1,11 @@
+# Dataset
+TuLane
+
+# Trained models
+output
+
+# Logs
+logs
+
+#ipynb checkpoints
+.ipynb_checkpoints
