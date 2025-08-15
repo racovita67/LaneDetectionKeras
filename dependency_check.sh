@@ -5,6 +5,7 @@ miniconda3_directory=~ # Directory where miniconda3 is found
 anaconda3_directory=C:\\ProgramData
 
 # Program variables - do not modify
+temp_path=None
 script_path=$(pwd)
 conda_available=0
 flag_conda_variant_u=0  # 0:None, 1:miniconda, 2:anaconda
@@ -47,31 +48,38 @@ check_and_suggest_path_envvar() {
 if [ $OSTYPE == "msys" ]; then
 
     # Check if miniconda3 is installed.
-    if command -v conda > /dev/null; then
+    if command -v condb > /dev/null; then
         echo Conda is installed
         conda_available=1
     else
         echo conda command not found: install miniconda, add the path to environment variables and rerun script.
 
         if [ -d $miniconda3_directory ]; then
+            temp_path=$(pwd)
             cd $miniconda3_directory # In windows C:/users/{my_user}
             if ls | grep -q miniconda3; then
                 flag_conda_variant_u=1
                 conda_variant_s=miniconda3
+            else
+                cd $temp_path
             fi
         fi
 
         if [ -d $anaconda3_directory ]; then
-            cd $anaconda3_directory # In windows C:/users/{my_user}
+            temp_path=$(pwd)
+            cd $anaconda3_directory
             if ls | grep -q anaconda3; then
                 flag_conda_variant_u=2
                 conda_variant_s=anaconda3
+            else
+                cd $temp_path
             fi
         fi
-
+        
         if [[ $flag_conda_variant_u -eq 1 || $flag_conda_variant_u -eq 2 ]]; then
             echo $conda_variant_s is available on the current user
-            cd $conda_variant_s
+            pwd
+            cd miniconda3/
 
             # Suggest the paths to be added to the PATH environment variable
             check_and_suggest_path_envvar $(pwd)
