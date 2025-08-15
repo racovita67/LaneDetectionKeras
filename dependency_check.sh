@@ -77,8 +77,6 @@ if [ $OSTYPE == "msys" ]; then
         fi
         
         if [[ $flag_conda_variant_u -eq 1 || $flag_conda_variant_u -eq 2 ]]; then
-            echo $conda_variant_s is available on the current user
-            pwd
             cd miniconda3/
 
             # Suggest the paths to be added to the PATH environment variable
