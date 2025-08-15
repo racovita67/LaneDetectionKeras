@@ -48,7 +48,7 @@ check_and_suggest_path_envvar() {
 if [ $OSTYPE == "msys" ]; then
 
     # Check if miniconda3 is installed.
-    if command -v condb > /dev/null; then
+    if command -v conda > /dev/null; then
         echo Conda is installed
         conda_available=1
     else
