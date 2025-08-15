@@ -3,6 +3,7 @@
 # User Variables - modified by user:
 miniconda3_directory=~ # Directory where miniconda3 is found
 anaconda3_directory=C:\\ProgramData
+conda_environment_name=LDK  # Lane Detection Keras
 
 # Program variables - do not modify
 temp_path=None
@@ -47,7 +48,7 @@ check_and_suggest_path_envvar() {
 
 if [ $OSTYPE == "msys" ]; then
 
-    # Check if miniconda3 is installed.
+    # Check if conda is installed.
     if command -v conda > /dev/null; then
         echo Conda is installed
         conda_available=1
@@ -100,6 +101,27 @@ if [ $OSTYPE == "msys" ]; then
     fi # End of command -v conda check
 
     cd $script_path
+
+    # Conda is available.
+    if [ $conda_available == 1 ]; then
+        # Check if environment is present, if not create one
+        env_list=$(conda env list)
+        if [[ "$env_list" != *"$conda_environment_name"* ]]; then  # If conda env doesn't exist, create it
+            yes yes | conda create -n $conda_environment_name python=3.7  # Create conda environment.
+            
+            echo Created conda environment with the name: $conda_environment_name # "yes | conda remove -n $conda_environment_name --all" to remove it.
+        fi
+
+        source activate $conda_environment_name
+        conda activate $conda_environment_name
+
+        if [[ $CONDA_DEFAULT_ENV == $conda_environment_name ]]; then  # conda env is activated
+            # Add the dependencies of our conda environment.
+            pip install -r requirements.txt
+            conda deactivate  # Deactivate the environment at the end.
+        fi
+        
+    fi
 else
     echo Script was tested only in Bash CLI used in Windows environment.
 fi
