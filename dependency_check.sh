@@ -2,10 +2,13 @@
 
 # User Variables - modified by user:
 miniconda3_directory=~ # Directory where miniconda3 is found
+anaconda3_directory=C:\\ProgramData
 
 # Program variables - do not modify
 script_path=$(pwd)
 conda_available=0
+flag_conda_variant_u=0  # 0:None, 1:miniconda, 2:anaconda
+conda_variant_s=None
 
 check_and_suggest_path_envvar() {
 # Parameter MUST be absolute path to a directory OR relative path from pwd to a directory
@@ -49,10 +52,26 @@ if [ $OSTYPE == "msys" ]; then
         conda_available=1
     else
         echo conda command not found: install miniconda, add the path to environment variables and rerun script.
-        cd $miniconda3_directory # In windows C:/users/{my_user}
-        if ls | grep -q miniconda3; then
-            echo miniconda3 is available on the current user
-            cd miniconda3
+
+        if [ -d $miniconda3_directory ]; then
+            cd $miniconda3_directory # In windows C:/users/{my_user}
+            if ls | grep -q miniconda3; then
+                flag_conda_variant_u=1
+                conda_variant_s=miniconda3
+            fi
+        fi
+
+        if [ -d $anaconda3_directory ]; then
+            cd $anaconda3_directory # In windows C:/users/{my_user}
+            if ls | grep -q anaconda3; then
+                flag_conda_variant_u=2
+                conda_variant_s=anaconda3
+            fi
+        fi
+
+        if [[ $flag_conda_variant_u -eq 1 || $flag_conda_variant_u -eq 2 ]]; then
+            echo $conda_variant_s is available on the current user
+            cd $conda_variant_s
 
             # Suggest the paths to be added to the PATH environment variable
             check_and_suggest_path_envvar $(pwd)
@@ -60,17 +79,18 @@ if [ $OSTYPE == "msys" ]; then
             if ls | grep -q Scripts; then
                 check_and_suggest_path_envvar Scripts
             else
-                echo conda executable not found: Scripts folder from miniconda not found.
+                echo conda Scripts directory not found: Scripts folder from miniconda not found.
             fi
 
             if ls | grep -q Library; then
                 check_and_suggest_path_envvar Library/bin
             else
-                echo conda executable not found: Library/bin folder from miniconda not found.
+                echo conda Library directory not found: Library/bin folder from miniconda not found.
             fi
         else
-            echo miniconda3 directory not found: Modify miniconda3_directory variable to the path of miniconda3.
-        fi
+            echo Anaconda not found: change miniconda3_directory or anaconda3_directory to the directory where it is located.
+        fi # End of flag check
+
     fi # End of command -v conda check
 
     cd $script_path
