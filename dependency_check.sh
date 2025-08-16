@@ -162,22 +162,27 @@ if [ $OSTYPE == "msys" ]; then
     if [ $command_available_b == 1 ]; then
         # Check if environment is present, if not create one
         env_list=$(conda env list)
-        if [[ "$env_list" != *"$conda_environment_name"* ]]; then  # If conda env doesn't exist, create it
-            yes yes | conda create -n $conda_environment_name python=3.7  # Create conda environment.
-            
-            echo Created conda environment with the name: $conda_environment_name and python 3.7 # "yes | conda remove -n $conda_environment_name --all" to remove it.
-        fi
-        
-        source activate $conda_environment_name
-        conda activate $conda_environment_name
 
-        if [[ $CONDA_DEFAULT_ENV == $conda_environment_name ]]; then  # conda env is activated
-            # Add the dependencies of our conda environment.
-            pip install -r requirements.txt
-            echo Installed python dependency modules for the $conda_environment_name conda environment
-            conda deactivate  # Deactivate the environment at the end.
-        fi
-    fi
+        read -p "Conda environment $conda_environment_name will be created and configured. Do you want to continue? [y/n]: " input_val
+        if [[ $input_val == "y" ]]; then
+
+            if [[ "$env_list" != *"$conda_environment_name"* ]]; then  # If conda env doesn't exist, create it
+                yes yes | conda create -n $conda_environment_name python=3.7  # Create conda environment.
+                
+                echo Created conda environment with the name: $conda_environment_name and python 3.7 # "yes | conda remove -n $conda_environment_name --all" to remove it.
+            fi
+
+            source activate $conda_environment_name
+            conda activate $conda_environment_name
+
+            if [[ $CONDA_DEFAULT_ENV == $conda_environment_name ]]; then  # conda env is activated
+                # Add the dependencies of our conda environment.
+                pip install -r requirements.txt
+                echo Installed python dependency modules for the $conda_environment_name conda environment
+                conda deactivate  # Deactivate the environment at the end.
+            fi
+        fi  # input_val == "y"
+    fi  # $command_available_b == 2
 else
     echo Script was tested only in Bash CLI used in Windows environment.
 fi
