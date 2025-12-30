@@ -2,7 +2,7 @@
 
 # User Variables - modified by user:
 miniconda3_directory=~ # Directory where miniconda3 is found
-anaconda3_directory=C:\\ProgramData
+anaconda3_directory="C:\\ProgramData"
 conda_environment_name=LDK  # Lane Detection Keras
 
 # Program variables - do not modify
@@ -183,8 +183,15 @@ check_command_available()
 }
 
 if [ $OSTYPE == "msys" ]; then
+
     # Check if conda is installed.
-    check_command_available --cmd conda --dir $miniconda3_directory $anaconda3_directory --dirname miniconda3 anaconda3
+    if [ -n "$miniconda3_directory" ] && [ -n "$anaconda3_directory" ]; then
+        check_command_available --cmd conda --dir $miniconda3_directory $anaconda3_directory --dirname miniconda3 anaconda3
+    elif [ -n "$miniconda3_directory" ]; then 
+        check_command_available --cmd conda --dir $miniconda3_directory --dirname miniconda3
+    elif [ -n "$anaconda3_directory" ]; then
+        check_command_available --cmd conda --dir $anaconda3_directory --dirname anaconda3
+    fi
 
     # Conda is available.
     if [ $? == 0 ]; then
