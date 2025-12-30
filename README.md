@@ -2,6 +2,7 @@
 This repository contain the implementation of a Neural Network used for Lane Segmentation.
 
 # Development Environment Configuration
+The application was tested excusivelly on Windows 10.
 
 1. Python Installation 3.8
 2. Install miniconda3
