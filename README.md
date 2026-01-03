@@ -2,6 +2,43 @@
 
 This repository contains a **lane detection application** developed in **JupyterLab** using a **Conda virtual environment**. To simplify setup and ensure reproducibility, a shell script is provided to automatically create and configure the required Conda environment and install all Python dependencies.
 
+## Conda Virtual Environment Setup Script
+
+The script `conda_venv_script.sh` performs the following actions:
+
+1. Checks whether Conda is available on the system and provides suggestions if it is not properly configured
+2. Creates a Conda virtual environment
+3. Installs all required Python dependencies into the virtual environment
+
+---
+
+### Script Configuration Parameters
+
+At the top of `conda_venv_script.sh`, the following parameters can be manually modified:
+
+* If the `conda` command does not work:
+  * And **Miniconda3** is installed, set **`miniconda3_directory`** to the directory where Miniconda is located.
+    Default:
+    ```
+    ~
+    ```
+    On Windows, this typically resolves to: `/c/Users/{user_name}`
+  * And **Anaconda3** is installed, set **`anaconda3_directory`** to the directory where Anaconda is located.
+    Default:
+    ```
+    C:\ProgramData
+    ```
+> [!NOTE]
+> The default values of `miniconda3_directory` and `anaconda3_directory` are the ones used by default by the official installers.
+
+> [!TIP]
+> If you installed conda, but it doesn't work, update the parameters described above (depending of which conda you have installed) and run the script.
+
+* If you want to use a different name for the Conda virtual environment, update the value of **`conda_environment_name`**.
+  Default:
+  ```
+  LDK
+  ```
 ---
 
 ## Development Environment
@@ -12,7 +49,7 @@ This repository contains a **lane detection application** developed in **Jupyter
 
 ---
 
-## Getting Started
+# Getting Started
 
 After cloning the repository, follow the steps below to configure the development environment.
 
@@ -51,68 +88,14 @@ From **Git Bash**, execute:
 ```
 
 ---
-
-## Conda Virtual Environment Setup Script
-
-The script `conda_venv_script.sh` performs the following actions:
-
-1. Checks whether Conda is available on the system and provides suggestions if it is not properly configured
-2. Creates a Conda virtual environment
-3. Installs all required Python dependencies into the virtual environment
-
----
-
-### Script Configuration Parameters
-
-At the top of `conda_venv_script.sh`, the following parameters can be manually modified:
-
-* **`miniconda3_directory`**
-  Default: `~`
-  On Windows, this typically resolves to:
-
-  ```
-  /c/Users/{user_name}
-  ```
-
-* **`anaconda3_directory`**
-  Default:
-
-  ```
-  C:\ProgramData
-  ```
-
-* **`conda_environment_name`**
-  Default:
-
-  ```
-  LDK
-  ```
-
----
-
-### Troubleshooting Conda Detection
-
-If the `conda` command does not work:
-
-* If **Miniconda3** is installed, set `miniconda3_directory` to the directory where Miniconda is located
-* If **Anaconda3** is installed, set `anaconda3_directory` to the directory where Anaconda is located
-
-If you want to use a different name for the Conda virtual environment, update the value of:
-
-```bash
-conda_environment_name
-```
-
----
-
-## 4. Launch JupyterLab
+### 4. Launch JupyterLab
 
 Once the environment is set up, start JupyterLab from Git Bash:
 
 ```bash
 jupyter lab
 ```
-
-Make sure the Conda environment is activated before launching JupyterLab.
+> [!NOTE]
+> Make sure the Conda environment is activated before launching JupyterLab.
 
 ---
