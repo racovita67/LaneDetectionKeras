@@ -2,10 +2,13 @@
 TuLane
 
 # Trained models
-output
+output/*
 
 # Logs
 logs
 
 #ipynb checkpoints
 .ipynb_checkpoints
+
+# Virtual Documents
+.virtual_documents
