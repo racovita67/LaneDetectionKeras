@@ -88,7 +88,14 @@ From **Git Bash**, execute:
 ```
 
 ---
-### 4. Launch JupyterLab
+### 4. Download TuLane Dataset
+Manually download the TuLane Dataset from Kaggle:
+https://www.kaggle.com/datasets/carlanebenchmark/carlane-benchmark/data
+
+Place the TuLane folder from the CARLANE dataset into the project.
+
+---
+### 5. Launch JupyterLab
 
 Once the environment is set up, start JupyterLab from Git Bash:
 
@@ -99,3 +106,27 @@ jupyter lab
 > Make sure the Conda environment is activated before launching JupyterLab.
 
 ---
+
+# Project's Initial Folder Structure
+- linux_based
+  - DNN_OF_RTX4090.ipynb
+- output
+  - final
+    - clahe_12_01_2025_200Epochs
+    - RTX4090_Training2_200Epochs
+- TuLane
+  - data
+    - test
+    - train
+    - val
+  - splits
+  - training
+- CLAHE.ipynb
+- conda_venv_config.sh
+- LaneNet.ipynb
+- Multiprocessing_C.py
+- output.7z
+
+> [!NOTE]
+> Only the important files were mentioned.
+
