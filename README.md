@@ -2,6 +2,8 @@
 
 Binary lane-marking segmentation for ADAS-style camera images. A U-Net is trained on the [CARLANE](https://www.kaggle.com/datasets/carlanebenchmark/carlane-benchmark/data) TuLane benchmark, with a CLAHE contrast-enhancement preprocessing step implemented from scratch.
 
+This is the practical part of my master's dissertation *Semantic Image Segmentation - Lane Detection* (Gheorghe Asachi Technical University of Iași, 2025; the dissertation itself is written in Romanian).
+
 ![Training and validation IoU](docs/results/iou_curves.png)
 
 ## Highlights
