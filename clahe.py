@@ -1,18 +1,10 @@
-import os
-import os.path as ops
+"""CLAHE (Contrast Limited Adaptive Histogram Equalization), implemented from scratch with NumPy.
 
-import math
+Used by Multiprocessing_C.py (batch preprocessing of the training images) and by LaneNet.ipynb
+(preprocessing of single images / video frames for inference).
+"""
 import numpy as np
-from matplotlib import pyplot as plt
-import glob
-import cv2
 
-# Multiprocessing
-from time import sleep
-import multiprocessing
-from multiprocessing import active_children
-from multiprocessing import Process
-from multiprocessing import Lock
 
 def clahe(img, v_w, h_w, color_depth=8, b=0.01):
     # img - The image to apply clahe on - from cv2.imread
@@ -76,7 +68,6 @@ def clahe(img, v_w, h_w, color_depth=8, b=0.01):
     # plt.plot(h[:,2,8])
     
     # Redistribute the excess in the histogram
-    b = 0.01  
     beta = int(b * XX * YY)
     # print(f'beta = {beta}')
 
@@ -264,75 +255,3 @@ def clahe(img, v_w, h_w, color_depth=8, b=0.01):
                     # Document formula is wrong, \instead use above formula
                     # I_new[i,j] = (s/(s+w)*( (t/(z+t) * CDF_UL) + (z/(z+t) * CDF_BL))) + (w/(s+w)*( (t/(z+t) * CDF_UR) + (z/(z+t) * CDF_BR)))
     return I_new
-    
-    # plt.subplot(2,2,1)
-    # plt.imshow(ws[:,:,2,8])
-    # plt.subplot(2,2,2)
-    # plt.plot(h[:,2,8])
-    # plt.subplot(2,2,2)
-    # plt.plot(v_CDF[:,2,8])
-    # plt.subplot(2,2,3)
-    # plt.imshow(I_new)
-
-# function to execute in a new process
-def task_process_img(idx, img_list, list_length, write_lock, write_path):
-    while(idx.value < list_length):
-        with idx.get_lock():
-            i = idx.value
-            idx.value += 1
-
-        # Apply CLAHE using all 12 threads of CPU
-        img_fp = img_list[i]
-        img = cv2.imread(img_fp)
-        ycbcr_image = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
-        lum = ycbcr_image[:,:,0]
-        eq_lum = clahe(lum, 9, 16)
-        ycbcr_image[:,:,0] = eq_lum
-        eq_img = cv2.cvtColor(ycbcr_image, cv2.COLOR_YCrCb2BGR)
-        # Write image into folder
-        
-        # with write_lock:
-        clahe_fn = ops.join(write_path, ops.split(img_fp)[1])
-        with write_lock:
-            cv2.imwrite(clahe_fn, eq_img)
-        print(f"Processed {i+1}/{list_length}")
-        
-    else:
-        return
-
- 
-# entry point
-if __name__ == '__main__':
-
-    w_dir = os.getcwd()
-    w_dir = ops.join(w_dir, ops.join('LaneDetectionKeras','LaneNetApproach'))
-    src_dir = ops.join(w_dir, ops.join('TuLane','splits'))
-    training_fp = ops.join(ops.split(src_dir)[0], 'training')
-    img_fp = ops.join(training_fp, 'gt_image')
-    bin_fp = ops.join(training_fp, 'gt_binary_image')
-
-    clahe_gt_image = ops.join(training_fp, 'clahe_gt_image') 
-    if ops.exists(training_fp) == True and ops.exists(clahe_gt_image) == False:
-        os.mkdir(clahe_gt_image)
-        
-    img_path = glob.glob(ops.join(img_fp, "*.png"))
-
-    # Multiprocessing
-    mpidx = multiprocessing.Value('i', lock=True)
-    mpidx.value = 0
-    write_lock = Lock() # Lock for writing into folder
-
-    # Create child processes
-    cpu_count = multiprocessing.cpu_count()
-    processes = [Process(target=task_process_img, args=(mpidx, img_path, len(img_path), write_lock, clahe_gt_image)) for _ in range(cpu_count)]
-    # start the child processes
-    for process in processes:
-        process.start()
-    # get a list of all active child processes
-    children = active_children()
-    # report a count of active children
-    print(f'Active Children Count: {len(children)}')
-    # report each in turn
-    for child in children:
-        print(child)
-

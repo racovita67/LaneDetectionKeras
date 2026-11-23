@@ -12,3 +12,6 @@ logs
 
 # Virtual Documents
 .virtual_documents
+
+# Python Cache
+*.pyc

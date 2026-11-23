@@ -1,4 +1,5 @@
 #!/bin/bash
+# Creates the conda environment for this project. Works in Git Bash on Windows and in bash on Linux.
 
 # User Variables - modified by user:
 miniconda3_directory=~ # Directory where miniconda3 is found
@@ -8,6 +9,7 @@ conda_environment_name=LDK  # Lane Detection Keras
 # Program variables - do not modify
 temp_path=None
 script_path=$(pwd)
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)  # Directory of this script (where requirements.txt is)
 
 check_and_suggest_path_envvar() {
 # Function: Prints windows-style path suggestion from unix-style path (absolute or relative).
@@ -182,46 +184,127 @@ check_command_available()
     return 1
 }
 
-if [ $OSTYPE == "msys" ]; then
+# Linux: makes the "conda" command usable in this script when conda is installed but not on PATH.
+find_conda_unix() {
+    if command -v conda > /dev/null; then
+        return 0
+    fi
+    local d
+    for d in "$HOME/miniconda3" "$HOME/anaconda3" "$HOME/miniforge3" "$HOME/mambaforge" /opt/conda /opt/miniconda3 /opt/anaconda3; do
+        if [ -f "$d/etc/profile.d/conda.sh" ]; then
+            source "$d/etc/profile.d/conda.sh"
+            echo Found conda at $d
+            return 0
+        fi
+    done
+    echo "conda was not found. Install Miniconda3 (https://www.anaconda.com/docs/getting-started/miniconda/install#linux) and rerun the script."
+    return 1
+}
 
-    # Check if conda is installed.
-    if [ -n "$miniconda3_directory" ] && [ -n "$anaconda3_directory" ]; then
-        check_command_available --cmd conda --dir $miniconda3_directory $anaconda3_directory --dirname miniconda3 anaconda3
-    elif [ -n "$miniconda3_directory" ]; then 
-        check_command_available --cmd conda --dir $miniconda3_directory --dirname miniconda3
-    elif [ -n "$anaconda3_directory" ]; then
-        check_command_available --cmd conda --dir $anaconda3_directory --dirname anaconda3
+# Creates the conda environment and installs the dependencies (same steps on Windows and Linux).
+# $1: platform, "windows" or "linux"
+setup_environment() {
+    local platform=$1
+
+    # Makes "conda activate" work inside a script.
+    eval "$(conda shell.bash hook)" 2>/dev/null || source activate
+
+    # Check if environment is present, if not create one
+    local env_list=$(conda env list)
+
+    local env_exists=1
+    if echo "$env_list" | awk '{print $1}' | grep -qx "$conda_environment_name"; then  # Exact name match
+        env_exists=0
+        read -p "Conda environment $conda_environment_name already exists. Reuse it and (re)install the dependencies in it? [y/n] (to start from scratch: conda env remove -n $conda_environment_name): " input_val
+    else
+        read -p "Conda environment $conda_environment_name will be created and configured. Do you want to continue? [y/n]: " input_val
+    fi
+    if [[ $input_val != "y" ]]; then
+        return 0
     fi
 
-    # Conda is available.
-    if [ $? == 0 ]; then
-        # Check if environment is present, if not create one
-        env_list=$(conda env list)
-        
-        read -p "Conda environment $conda_environment_name will be created and configured. Do you want to continue? [y/n]: " input_val
-        if [[ $input_val == "y" ]]; then
+    conda tos accept > /dev/null 2>&1 || true  # Accept conda Terms of Service (only exists in recent conda versions, ignore the error on older ones).
 
-            conda tos accept  # Accept conda Terms of Service before creating the environment.
+    if [ $env_exists != 0 ]; then  # If conda env doesn't exist, create it
+        conda create -y -n $conda_environment_name python=3.7  # Create conda environment.
+        echo Created conda environment with the name: $conda_environment_name and python 3.7 # "conda remove -y -n $conda_environment_name --all" to remove it.
+    fi
 
-            if [[ "$env_list" != *"$conda_environment_name"* ]]; then  # If conda env doesn't exist, create it
-                yes yes | conda create -n $conda_environment_name python=3.7  # Create conda environment.  
-                echo Created conda environment with the name: $conda_environment_name and python 3.7 # "yes | conda remove -n $conda_environment_name --all" to remove it.
+    conda activate $conda_environment_name
+
+    # Ignore packages from the user-level Python (e.g. %APPDATA%\\Python\\Python37 or ~/.local), so that only the conda environment is used.
+    # Without this, pip can report "already satisfied" for a package that lives outside the environment and skip installing it.
+    # The variable is also stored in the environment, so it stays active after "conda activate".
+    export PYTHONNOUSERSITE=1
+    conda env config vars set PYTHONNOUSERSITE=1 -n $conda_environment_name > /dev/null 2>&1 || true
+
+    if [[ $CONDA_DEFAULT_ENV == $conda_environment_name ]]; then  # conda env is activated
+        # Optional: CUDA 11.2 + cuDNN 8.1 for NVIDIA GPUs. tensorflow==2.10.1 is the last TensorFlow with native Windows GPU support,
+        # but it only sees the GPU if these libraries are installed. Without them training silently runs on the CPU (very slow).
+        read -p "Install CUDA 11.2 and cuDNN 8.1 for NVIDIA GPU training? (~1 GB, skip if you have no NVIDIA GPU) [y/n]: " gpu_val
+        if [[ $gpu_val == "y" ]]; then
+            # --no-update-deps keeps conda-forge from replacing the python/openssl of the environment.
+            conda install -y -c conda-forge --no-update-deps cudatoolkit=11.2 cudnn=8.1.0
+            if [[ $platform == "linux" ]]; then
+                # On Linux TensorFlow finds the CUDA libraries through LD_LIBRARY_PATH.
+                mkdir -p "$CONDA_PREFIX/etc/conda/activate.d"
+                echo 'export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"' > "$CONDA_PREFIX/etc/conda/activate.d/cuda_libs.sh"
+                export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
             fi
+        fi
 
-            source activate $conda_environment_name
-            conda activate $conda_environment_name
+        # Add the dependencies of our conda environment.
+        pip install -r "$script_dir/requirements.txt"
+        echo Installed python dependency modules for the $conda_environment_name conda environment
 
-            if [[ $CONDA_DEFAULT_ENV == $conda_environment_name ]]; then  # conda env is activated
-                # Add the dependencies of our conda environment.
-                pip install -r requirements.txt
-                echo Installed python dependency modules for the $conda_environment_name conda environment
-                conda deactivate  # Deactivate the environment at the end.
+        # Report whether TensorFlow can see a GPU.
+        local tf_ok=1
+        if python -c "import tensorflow as tf; print('GPUs visible to TensorFlow:', tf.config.list_physical_devices('GPU'))"; then
+            tf_ok=0
+        else
+            echo "TensorFlow could not be imported, see the error above. The environment was created but is not ready."
+        fi
+
+        conda deactivate  # Deactivate the environment at the end.
+
+        if [ $tf_ok == 0 ]; then
+            if [[ $platform == "windows" ]]; then
+                echo "Done. Next steps: source activate $conda_environment_name, then jupyter lab"
+            else
+                echo "Done. Next steps: conda activate $conda_environment_name (in a new terminal if you just ran conda init), then jupyter lab"
             fi
-        fi  # input_val == "y"
-    fi  # conda available
-else
-    echo Script was tested only in Bash CLI used in Windows Environment.
-fi
+        fi
+    fi
+}
+
+case "$OSTYPE" in
+    msys*|cygwin*|win32*)  # Git Bash on Windows
+        # Check if conda is installed.
+        conda_ok=1
+        if [ -n "$miniconda3_directory" ] && [ -n "$anaconda3_directory" ]; then
+            check_command_available --cmd conda --dir $miniconda3_directory $anaconda3_directory --dirname miniconda3 anaconda3
+            conda_ok=$?
+        elif [ -n "$miniconda3_directory" ]; then
+            check_command_available --cmd conda --dir $miniconda3_directory --dirname miniconda3
+            conda_ok=$?
+        elif [ -n "$anaconda3_directory" ]; then
+            check_command_available --cmd conda --dir $anaconda3_directory --dirname anaconda3
+            conda_ok=$?
+        fi
+
+        if [ $conda_ok == 0 ]; then  # Conda is available.
+            setup_environment windows
+        fi
+        ;;
+    linux*)
+        if find_conda_unix; then
+            setup_environment linux
+        fi
+        ;;
+    *)
+        echo "Unsupported system: $OSTYPE. The script supports Git Bash on Windows and Linux."
+        ;;
+esac
 
 # Abbreviation Table
 # dp = directory path (e.g. /c/git/LaneDetectionKeras)

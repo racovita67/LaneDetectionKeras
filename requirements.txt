@@ -5,3 +5,4 @@ scikit-learn==1.0.2
 focal_loss==0.0.7
 tensorflow==2.10.1
 jupyterlab==3.6.8
+urllib3<2
